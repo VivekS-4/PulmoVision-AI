@@ -8,8 +8,7 @@ from tensorflow.keras.models import load_model
 
 app = Flask(__name__)
 
-# Load the trained model
-model = load_model('covid_cnn_model.h5')
+
 
 
 @app.route('/upload', methods=['POST'])
@@ -31,10 +30,15 @@ def upload_file():
         
 
 
-@app.route('/predict/<file_name>', methods=['POST','GET'])
-def predict_file(file_name): 
+@app.route('/predict_cnn/<file_name>', methods=['POST','GET'])
+def predict_with_cnn(file_name): 
     print(file_name)
+
+    # Load the trained model
+    model = load_model('models/covid_cnn_model.h5')
+
     class_names = ["Normal","Non-Covid","Covid"]       
+    
     # Process the image and make predictions
     image_size = (64,64)
     img_data = cv2.imread(os.path.join('uploads', file_name))
@@ -43,6 +47,23 @@ def predict_file(file_name):
 
     prediction = model.predict(np.array([img_data]))
     predicted_class = class_names[np.argmax(prediction)]
+    return jsonify({'predicted_class': predicted_class})
+
+
+@app.route('/predict_dnn/<file_name>', methods=['POST','GET'])
+def predict_with_dnn(file_name): 
+    print(file_name)
+    model = load_model('models/covid_dnn_model.h5')
+
+    class_names = ["Normal","Non-Covid","Covid"]  
+
+    image_size = (64,64)
+    img_data = cv2.imread(os.path.join('uploads', file_name))
+    img_data = cv2.resize(img_data.copy(), image_size,interpolation=cv2.INTER_AREA)
+    img_data = img_data/255
+
+    prediction = model.predict(np.array([img_data]))
+    predicted_class = class_names[np.argmax(prediction[0])]
     return jsonify({'predicted_class': predicted_class})
 
 
